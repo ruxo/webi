@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html ng-app="TestApp">
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.16/angular.min.js"></script>
+</head>
+<body ng-controller="HelloController as ctrl">
+    <div>{{ ctrl.status }}</div>
+    
+    <script>
+        angular
+        .module("TestApp", [])
+        .controller("HelloController", function($http){
+             var self = this;
+             self.status = "Getting data from service.";
+             
+             $http
+             .get("/data/sample")
+             .success(function(data){
+                 self.status = data;
+             })
+             .error(function(){
+                 self.status = "Cannot retrieve data!";
+             });
+        });
+    </script>
+</body>
+</html>
