@@ -24,8 +24,10 @@ type Startup(configs :StartupConfigure list) =
         configs |> Seq.iter (fun f -> f builder)
 
 let discoverDllFiles() :FilePath seq =
-    IO.Directory.EnumerateFiles(@"bin/", "*.dll")
-    |> Seq.map IO.Path.GetFullPath
+    if IO.Directory.Exists "bin"
+        then IO.Directory.EnumerateFiles(@"bin/", "*.dll")
+             |> Seq.map IO.Path.GetFullPath
+        else Seq.empty
 
 let loadDlls (files :FilePath seq) :Assembly list =
     files |> Seq.map Assembly.LoadFile 
