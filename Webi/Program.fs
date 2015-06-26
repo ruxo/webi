@@ -24,33 +24,55 @@ type Startup(configs :StartupConfigure list) =
         configs |> Seq.iter (fun f -> f builder)
 
 let discoverDllFiles() :FilePath seq =
-    IO.Directory.EnumerateFiles(".", "*.dll")
+    IO.Directory.EnumerateFiles(@"bin/", "*.dll")
     |> Seq.map IO.Path.GetFullPath
 
 let loadDlls (files :FilePath seq) :Assembly list =
-    let loadAsm s =
-        printfn "Loading %s" s
-        Assembly.LoadFile s
-
-    files |> Seq.map loadAsm 
+    files |> Seq.map Assembly.LoadFile 
           |> Seq.toList
 
 let filterStartup (asm :Assembly list) :Type list =
+    let getTypes (a :Assembly) =
+        try
+            printfn "Retriving types from %s" a.FullName
+            a.GetExportedTypes()
+        with
+        | :? ReflectionTypeLoadException as e ->
+            printfn "Loading types failed!"
+            printfn "Loaded types:"
+            e.Types |> Seq.filter (fun t -> t <> null) |> Seq.iter (fun t -> printfn "\t%s" t.FullName)
+            printfn "Unfisnished loaded types:"
+            e.LoaderExceptions |> Seq.iter (fun et -> printfn "\t%s: %s" (et.GetType().Name) et.Message)
+            reraise()
+
     asm
-    |> Seq.collect (fun a ->  printfn "Filtering... %s" a.FullName
-                              a.GetTypes())
+    |> Seq.collect getTypes
     |> Seq.filter (fun t -> t.Name = "Startup")
     |> Seq.toList
 
 let createConfigFunc (startup_type :Type) :StartupConfigure =
-    let ctor = startup_type.GetConstructor(null)
+    let ctor = startup_type.GetConstructor([||])
     let instance = ctor.Invoke(null)
     let config_method = startup_type.GetMethod("Configure")
     fun (app :IAppBuilder) ->
         config_method.Invoke(instance, [|app|]) |> ignore
 
+let installAssemblyLoadHandler() :unit =
+    let loaded_asm = Collections.Generic.Dictionary<string,Assembly>()
+
+    AppDomain.CurrentDomain.AssemblyLoad
+    |> Observable.add (fun e -> loaded_asm.[e.LoadedAssembly.FullName] <- e.LoadedAssembly)
+
+    AppDomain.CurrentDomain.add_AssemblyResolve(
+        fun o e -> match loaded_asm.TryGetValue e.Name with
+                   | false, _ -> null
+                   | true, a -> a
+    )
+
 [<EntryPoint>]
 let main argv = 
+    installAssemblyLoadHandler()
+
     let configs = discoverDllFiles()
                     |> loadDlls
                     |> filterStartup
