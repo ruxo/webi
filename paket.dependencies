@@ -5,3 +5,4 @@ nuget Microsoft.Owin.SelfHost
 nuget Microsoft.Owin.FileSystems
 nuget Microsoft.Owin.StaticFiles
 nuget Nancy.Owin
+nuget Nancy
