@@ -1,5 +1,7 @@
 ﻿source https://nuget.org/api/v2
 
-nuget Microsoft.Owin ~> 3.0.1
-nuget Nancy ~> 1.2.0
-nuget Nancy.Owin ~> 1.2.0
+nuget Microsoft.Owin.Host.HttpListener
+nuget Microsoft.Owin.SelfHost
+nuget Microsoft.Owin.FileSystems
+nuget Microsoft.Owin.StaticFiles
+nuget Nancy.Owin
