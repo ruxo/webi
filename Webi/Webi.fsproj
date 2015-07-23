@@ -57,6 +57,9 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="..\paket-files\ruxo\962e3eb07079e613a534\OptionParser.fs">
+      <Link>OptionParser.fs</Link>
+    </Compile>
     <Compile Include="Program.fs" />
     <None Include="App.config" />
   </ItemGroup>
@@ -66,6 +69,9 @@
     </Reference>
     <Reference Include="Microsoft.Owin.FileSystems">
       <HintPath>..\packages\Microsoft.Owin.FileSystems\lib\net45\Microsoft.Owin.FileSystems.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Owin.Host.HttpListener">
+      <HintPath>..\packages\Microsoft.Owin.Host.HttpListener\lib\net45\Microsoft.Owin.Host.HttpListener.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Owin.Hosting">
       <HintPath>..\packages\Microsoft.Owin.Hosting\lib\net45\Microsoft.Owin.Hosting.dll</HintPath>

@@ -7,8 +7,6 @@ open Microsoft.Owin
 open Microsoft.Owin.FileSystems
 open Microsoft.Owin.Hosting
 
-let port = 9000
-
 type FilePath = string
 type StartupConfigure = IAppBuilder -> unit
 
@@ -23,9 +21,9 @@ type Startup(configs :StartupConfigure list) =
 
         configs |> Seq.iter (fun f -> f builder)
 
-let discoverDllFiles() :FilePath seq =
-    if IO.Directory.Exists "bin"
-        then IO.Directory.EnumerateFiles(@"bin/", "*.dll")
+let discoverDllFiles(bin_directory) :FilePath seq =
+    if IO.Directory.Exists bin_directory
+        then IO.Directory.EnumerateFiles(bin_directory, "*.dll")
              |> Seq.map IO.Path.GetFullPath
         else Seq.empty
 
@@ -71,19 +69,32 @@ let installAssemblyLoadHandler() :unit =
                    | true, a -> a
     )
 
+type CommandLineContext =
+    { port :int
+      bin_dir :string }
+
 [<EntryPoint>]
 let main argv = 
+    let options = [
+        ["p"; "port:"], fun ctx v -> { ctx with port=Int32.Parse v }
+        ["bin:"], fun ctx v -> { ctx with bin_dir=v }
+    ]
+    let cmd_parser = RZ.OptionParser.parser options
+    let (settings, _) = cmd_parser { port=9000; bin_dir=null } argv
+
     installAssemblyLoadHandler()
 
-    let configs = discoverDllFiles()
-                    |> loadDlls
-                    |> filterStartup
-                    |> Seq.map createConfigFunc
-                    |> Seq.toList
+    let configs = if settings.bin_dir=null
+                      then Seq.empty
+                      else discoverDllFiles settings.bin_dir
+                  |> loadDlls
+                  |> filterStartup
+                  |> Seq.map createConfigFunc
+                  |> Seq.toList
 
     let startup = Startup configs
 
-    use server = WebApp.Start(sprintf "http://+:%d" port, fun builder -> startup.Configuration builder)
+    use server = WebApp.Start(sprintf "http://+:%d" settings.port, fun builder -> startup.Configuration builder)
     printfn "ENTER to exit..."
     Console.ReadLine() |> ignore
     0
